@@ -12,9 +12,15 @@ typedef struct sub_matrix {
     int start_pos_i, start_pos_j;
 } sub_matrix_t;
 
+typedef struct Args {
+    matrix_t *C;
+    int block_i,  block_j;
+} Args_t;
+
 void read(matrix_t *Mat);
 void print(matrix_t *Mat);
 void print_sub(sub_matrix_t *Mat);
 void addition(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
 void multiply(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
+void* naive_thread(void *arg);
 void naive(matrix_t *C, matrix_t *A, matrix_t *B);

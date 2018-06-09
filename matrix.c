@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include "matrix.h"
 static sub_matrix_t subA[2][2], subB[2][2];
 
@@ -52,8 +53,11 @@ void multiply(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
     }
 }
 
-void naive_thread(matrix_t *C, int block_i, int block_j)
+void* naive_thread(void *arg)
 {
+    Args_t *Args = (Args_t *) arg;
+    int block_i = Args->block_i, block_j = Args->block_j;
+    matrix_t *C = Args->C;
     sub_matrix_t subMat;
 
     // initialize subMat
@@ -62,8 +66,6 @@ void naive_thread(matrix_t *C, int block_i, int block_j)
     subMat.start_pos_i = subA[block_i][block_j].start_pos_i;
     subMat.start_pos_j = subA[block_i][block_j].start_pos_j;
     memset(&subMat.data[0][0], 0, sizeof subMat.data);
-
-    printf("%d %d\n", subMat.start_pos_i, subMat.start_pos_j);
 
     for (int i = 0; i < 2; i++) {
         multiply(&subMat, &subA[block_i][i], &subB[i][block_j]);
@@ -81,6 +83,9 @@ void naive(matrix_t *C, matrix_t *A, matrix_t *B)
     // check if A & B are square matrices
     if (A->row != A->col || B->row != B->col || A->row != B->row)
         return;
+
+    pthread_t thread[2][2];
+    Args_t Args[2][2];
 
     C->row = A->row;
     C->col = A->col;
@@ -105,9 +110,19 @@ void naive(matrix_t *C, matrix_t *A, matrix_t *B)
         }
     }
 
-
-    naive_thread(C, 0, 0);
-    naive_thread(C, 0, 1);
-    naive_thread(C, 1, 0);
-    naive_thread(C, 1, 1);
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            Args[i][j].C = C;
+            Args[i][j].block_i = i;
+            Args[i][j].block_j = j;
+            pthread_create(&thread[i][j], NULL, naive_thread, (void*) &Args[i][j]);
+        }
+    }
+    
+    // wait for all threads to complete
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+             pthread_join(thread[i][j], NULL);
+        }
+    }
 }
