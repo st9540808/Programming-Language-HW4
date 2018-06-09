@@ -1,0 +1,7 @@
+.*
+*.txt
+*-workspace
+!CMakeLists.txt
+!.gitignore
+generater
+build/
