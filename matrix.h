@@ -1,3 +1,6 @@
+#ifndef _MATRIX_H
+#define _MATRIX_H
+
 #define ROWSIZE 10
 #define COLSIZE 10
 
@@ -24,3 +27,5 @@ void addition(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
 void multiply(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
 void* naive_thread(void *arg);
 void naive(matrix_t *C, matrix_t *A, matrix_t *B);
+
+#endif
