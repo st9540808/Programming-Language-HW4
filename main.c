@@ -15,8 +15,8 @@ int main(int argc, char const *argv[])
 
     print(&A);
     printf("\n");
-    // printf("\n");
     print(&B);
+    printf("\n");
     print(&C);
 
     return 0;
