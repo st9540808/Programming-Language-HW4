@@ -1,8 +1,8 @@
 #ifndef _MATRIX_H
 #define _MATRIX_H
 
-#define ROWSIZE 1024
-#define COLSIZE 1024
+#define ROWSIZE 4096
+#define COLSIZE 4096
 
 typedef struct matrix {
     int (*data)[COLSIZE];
