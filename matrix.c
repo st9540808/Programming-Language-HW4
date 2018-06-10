@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include "matrix.h"
 
@@ -52,6 +53,11 @@ void free_memory_sub(sub_matrix_t *Mat)
     free(Mat->data);
 }
 
+void copy_sub(sub_matrix_t *dest, const sub_matrix_t *src)
+{
+    memcpy(dest->data, src->data, sizeof *src->data * src->row);
+}
+
 void addition(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
 {
     for (int i = 0; i < A->row; i++) {
@@ -60,13 +66,37 @@ void addition(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
     }
 }
 
+void subtract(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
+{
+    for (int i = 0; i < A->row; i++) {
+        for (int j = 0; j < A->col; j++)
+            C->data[i][j] = A->data[i][j] - B->data[i][j];
+    }
+}
+
+/**
+ * multiply with no side effect
+ */
 void multiply(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
 {
     int elem;
     for (int i = 0; i < A->row; i++) {
         for (int j = 0; j < A->col; j++) {
             elem = 0;
-            for (int k = 0; k < A->row; k++)
+            for (int k = 0; k < A->col; k++)
+                elem += A->data[i][k] * B->data[k][j];
+            C->data[i][j] = elem;
+        }
+    }
+}
+
+void multiply_addto(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
+{
+    int elem;
+    for (int i = 0; i < A->row; i++) {
+        for (int j = 0; j < A->col; j++) {
+            elem = 0;
+            for (int k = 0; k < A->col; k++)
                 elem += A->data[i][k] * B->data[k][j];
             // BE CAREFUL! the value of elem will be added to C->data
             C->data[i][j] += elem;
@@ -91,7 +121,7 @@ void* naive_thread(void *arg)
     memset(&subMat.data[0][0], 0, sizeof *subMat.data * (ROWSIZE / 2));
 
     for (int i = 0; i < 2; i++) {
-        multiply(&subMat, &subA[block_i][i], &subB[i][block_j]);
+        multiply_addto(&subMat, &subA[block_i][i], &subB[i][block_j]);
     }
     
     // copy result to matrix C

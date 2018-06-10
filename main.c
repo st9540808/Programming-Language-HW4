@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <string.h>
 #include "matrix.h"
+#include "strassen.h"
 
 int main(void)
 {
@@ -16,11 +18,13 @@ int main(void)
     read(&B);
 
     naive(&C, &A, &B);
+    print(&C);
+    puts("");
 
-    // print(&A);
-    // printf("\n");
-    // print(&B);
-    // printf("\n");
+    // reset C
+    memset(C.data, 0, sizeof *C.data * ROWSIZE);
+
+    strassen(&C, &A, &B);
     print(&C);
 
     free_memory(&A);

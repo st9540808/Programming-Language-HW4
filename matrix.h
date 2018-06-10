@@ -13,6 +13,7 @@ typedef struct sub_matrix {
     int (*data)[COLSIZE / 2];
     int row, col;
     int start_pos_i, start_pos_j;
+    int done; // compatible for strassen's method
 } sub_matrix_t;
 
 typedef struct Args {
@@ -27,8 +28,11 @@ void allocate(matrix_t *Mat);
 void allocate_sub(sub_matrix_t *Mat);
 void free_memory(matrix_t *Mat);
 void free_memory_sub(sub_matrix_t *Mat);
+void copy_sub(sub_matrix_t *dest, const sub_matrix_t *src);
 void addition(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
+void subtract(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
 void multiply(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
+void multiply_addto(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
 void* naive_thread(void *arg);
 void naive(matrix_t *C, matrix_t *A, matrix_t *B);
 
