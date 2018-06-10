@@ -2,6 +2,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "matrix.h"
+
 static sub_matrix_t subA[2][2], subB[2][2];
 
 void read(matrix_t *Mat)
@@ -29,6 +30,26 @@ void print_sub(sub_matrix_t *Mat)
             printf("%3d ", Mat->data[i][j]);
         puts("");
     }
+}
+
+void allocate(matrix_t *Mat)
+{
+    Mat->data = malloc(sizeof *Mat->data * ROWSIZE);
+}
+
+void allocate_sub(sub_matrix_t *Mat)
+{
+    Mat->data = malloc(sizeof *Mat->data * (ROWSIZE / 2));
+}
+
+void free_memory(matrix_t *Mat)
+{
+    free(Mat->data);
+}
+
+void free_memory_sub(sub_matrix_t *Mat)
+{
+    free(Mat->data);
 }
 
 void addition(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
@@ -60,12 +81,14 @@ void* naive_thread(void *arg)
     matrix_t *C = Args->C;
     sub_matrix_t subMat;
 
+    allocate_sub(&subMat);
+
     // initialize subMat
     subMat.row = subA[block_i][block_j].row;
     subMat.col = subA[block_i][block_j].col;
     subMat.start_pos_i = subA[block_i][block_j].start_pos_i;
     subMat.start_pos_j = subA[block_i][block_j].start_pos_j;
-    memset(&subMat.data[0][0], 0, sizeof subMat.data);
+    memset(&subMat.data[0][0], 0, sizeof *subMat.data * (ROWSIZE / 2));
 
     for (int i = 0; i < 2; i++) {
         multiply(&subMat, &subA[block_i][i], &subB[i][block_j]);
@@ -76,6 +99,8 @@ void* naive_thread(void *arg)
         for (int j = 0; j < subMat.col; j++)
             C->data[subMat.start_pos_i + i][subMat.start_pos_j + j] = subMat.data[i][j];
     }
+
+    free_memory_sub(&subMat);
 }
 
 void naive(matrix_t *C, matrix_t *A, matrix_t *B)
@@ -93,6 +118,9 @@ void naive(matrix_t *C, matrix_t *A, matrix_t *B)
     // set size for submatrices
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
+            allocate_sub(&subA[i][j]);
+            allocate_sub(&subB[i][j]);
+
             subA[i][j].row = subB[i][j].row = A->row / 2;
             subA[i][j].col = subB[i][j].col = A->col / 2;
             subA[i][j].start_pos_i = subB[i][j].start_pos_i = A->row / 2 * i;
@@ -122,7 +150,12 @@ void naive(matrix_t *C, matrix_t *A, matrix_t *B)
     // wait for all threads to complete
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
-             pthread_join(thread[i][j], NULL);
+            pthread_join(thread[i][j], NULL);
         }
+    }
+
+    for (sub_matrix_t *a = &subA[0][0], *b = &subB[0][0]; a != &subA[2][0]; a++, b++) {
+        free_memory_sub(a);
+        free_memory_sub(b);
     }
 }

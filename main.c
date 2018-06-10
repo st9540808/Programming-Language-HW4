@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include "matrix.h"
 
-int main(int argc, char const *argv[])
+int main(void)
 {
     matrix_t A, B;
     matrix_t C;
+
+    allocate(&A);
+    allocate(&B);
+    allocate(&C);
 
     scanf("%d %d", &A.row, &A.col);
     read(&A);
@@ -13,11 +17,15 @@ int main(int argc, char const *argv[])
 
     naive(&C, &A, &B);
 
-    print(&A);
-    printf("\n");
-    print(&B);
-    printf("\n");
+    // print(&A);
+    // printf("\n");
+    // print(&B);
+    // printf("\n");
     print(&C);
+
+    free_memory(&A);
+    free_memory(&B);
+    free_memory(&C);
 
     return 0;
 }
