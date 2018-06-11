@@ -143,19 +143,27 @@ static void* strassen_thread_C00(void *arg)
         .start_pos_i = subA[block_i][block_j].start_pos_i,
         .start_pos_j = subA[block_i][block_j].start_pos_j,
     };
+
+    allocate_sub(&subMat);
     
     pthread_mutex_lock(&mtx);
     while (!(p[2].done == 1) || !(p[4].done == 1) ||
            !(p[5].done == 1) || !(p[6].done == 1))
         pthread_cond_wait(&cond, &mtx);
     pthread_mutex_unlock(&mtx);
+
+    addition(&subMat, &p[5], &p[4]);
+    subtract(&subMat, &subMat, &p[2]);
+    addition(&subMat, &subMat, &p[6]);
     
     // copy result to matrix C
     for (int i = 0; i < subMat.row; i++) {
         for (int j = 0; j < subMat.col; j++)
             C->data[subMat.start_pos_i + i][subMat.start_pos_j + j] =
-                p[5].data[i][j] + p[4].data[i][j] - p[2].data[i][j] + p[6].data[i][j];
+                subMat.data[i][j];
     }
+
+    free_memory_sub(&subMat);
 }
 
 static void* strassen_thread_C01(void *arg)
@@ -216,19 +224,27 @@ static void* strassen_thread_C11(void *arg)
         .start_pos_i = subA[block_i][block_j].start_pos_i,
         .start_pos_j = subA[block_i][block_j].start_pos_j,
     };
+
+    allocate_sub(&subMat);
     
     pthread_mutex_lock(&mtx);
     while (!(p[1].done == 1) || !(p[3].done == 1) ||
            !(p[5].done == 1) || !(p[7].done == 1))
         pthread_cond_wait(&cond, &mtx);
     pthread_mutex_unlock(&mtx);
+
+    addition(&subMat, &p[1], &p[5]);
+    subtract(&subMat, &subMat, &p[3]);
+    subtract(&subMat, &subMat, &p[7]);
     
     // copy result to matrix C
     for (int i = 0; i < subMat.row; i++) {
         for (int j = 0; j < subMat.col; j++)
             C->data[subMat.start_pos_i + i][subMat.start_pos_j + j] =
-                p[1].data[i][j] + p[5].data[i][j] - p[3].data[i][j] - p[7].data[i][j];
+                subMat.data[i][j];
     }
+
+    free_memory_sub(&subMat);
 }
 
 void strassen(matrix_t *C, matrix_t *A, matrix_t *B)
@@ -244,6 +260,9 @@ void strassen(matrix_t *C, matrix_t *A, matrix_t *B)
         { strassen_thread_C00, strassen_thread_C01 },
         { strassen_thread_C10, strassen_thread_C11 }
     };
+
+    C->row = A->row;
+    C->col = A->col;
 
     // set done flag to false and initialize
     for (int i = 1; i <= 7; i++) {
