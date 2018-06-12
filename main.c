@@ -4,12 +4,22 @@
 #include "matrix.h"
 #include "strassen.h"
 
+#define PRINTTIME(str) { \
+    secs = end.tv_sec - start.tv_sec; \
+    nsecs = end.tv_nsec - start.tv_nsec; \
+    if (nsecs < 0) { \
+        secs--; \
+        nsecs += 1000000000; \
+    } \
+    printf(str ": %f s\n", (secs * 1e9 + nsecs) / 1e9); \
+}
+
 int main(void)
 {
     struct timespec start, end;
     long nsecs, secs;
     matrix_t A, B;
-    matrix_t C;
+    matrix_t C, C2;
 
     allocate(&A);
     allocate(&B);
@@ -23,32 +33,29 @@ int main(void)
     clock_gettime(CLOCK_MONOTONIC, &start);
     naive(&C, &A, &B);
     clock_gettime(CLOCK_MONOTONIC, &end);
+    PRINTTIME("naive");
+    print(&C); puts("");
 
-    secs = end.tv_sec - start.tv_sec;
-    nsecs = end.tv_nsec - start.tv_nsec;
-    if (nsecs < 0) {
-        secs--;
-        nsecs += 1000000000;
-    }
-    printf("naive: %f s", (secs * 1e9 + nsecs) / 1e9);
-    print(&C);
-    puts("");
-
-    // reset C
-    memset(C.data, 0, sizeof *C.data * ROWSIZE);
-
+    clear(&C);
     clock_gettime(CLOCK_MONOTONIC, &start);
     strassen(&C, &A, &B);
     clock_gettime(CLOCK_MONOTONIC, &end);
+    PRINTTIME("strassen");
+    print(&C); puts("");
 
-    secs = end.tv_sec - start.tv_sec;
-    nsecs = end.tv_nsec - start.tv_nsec;
-    if (nsecs < 0) {
-        secs--;
-        nsecs += 1000000000;
-    }
-    printf("strassen: %f s", (secs * 1e9 + nsecs) / 1e9);
-    print(&C);
+    clear(&C);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    strassen(&C, &A, &B);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    PRINTTIME("strassen");
+    print(&C); puts("");
+
+    clear(&C);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    strassen_opt(&C, &A, &B);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    PRINTTIME("strassen_opt");
+    print(&C); puts("");
 
     free_memory(&A);
     free_memory(&B);
