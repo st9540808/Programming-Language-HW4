@@ -133,7 +133,7 @@ static void* naive_thread(void *arg)
     clear_sub(&subMat);
 
     for (int i = 0; i < 2; i++) {
-        multiply_opt(&subMat, &subA[block_i][i], &subB[i][block_j]);
+        multiply(&subMat, &subA[block_i][i], &subB[i][block_j]);
     }
     
     // copy result to matrix C

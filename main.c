@@ -19,11 +19,12 @@ int main(void)
     struct timespec start, end;
     long nsecs, secs;
     matrix_t A, B;
-    matrix_t C, C2;
+    matrix_t C[4];
 
     allocate(&A);
     allocate(&B);
-    allocate(&C);
+    for (int i = 0; i < 4; i++)
+        allocate(&C[i]);    
 
     scanf("%d %d", &A.row, &A.col);
     read(&A);
@@ -31,35 +32,33 @@ int main(void)
     read(&B);
 
     clock_gettime(CLOCK_MONOTONIC, &start);
-    naive(&C, &A, &B);
+    naive(&C[0], &A, &B);
     clock_gettime(CLOCK_MONOTONIC, &end);
     PRINTTIME("naive");
-    print(&C); puts("");
+    // print(&C); puts("");
 
-    clear(&C);
     clock_gettime(CLOCK_MONOTONIC, &start);
-    strassen(&C, &A, &B);
+    naive_opt(&C[1], &A, &B);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    PRINTTIME("naive_opt");
+    // print(&C); puts("");
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    strassen(&C[2], &A, &B);
     clock_gettime(CLOCK_MONOTONIC, &end);
     PRINTTIME("strassen");
-    print(&C); puts("");
+    // print(&C); puts("");
 
-    clear(&C);
     clock_gettime(CLOCK_MONOTONIC, &start);
-    strassen(&C, &A, &B);
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    PRINTTIME("strassen");
-    print(&C); puts("");
-
-    clear(&C);
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    strassen_opt(&C, &A, &B);
+    strassen_opt(&C[3], &A, &B);
     clock_gettime(CLOCK_MONOTONIC, &end);
     PRINTTIME("strassen_opt");
-    print(&C); puts("");
+    // print(&C); puts("");
 
     free_memory(&A);
     free_memory(&B);
-    free_memory(&C);
+    for (int i = 0; i < 4; i++)
+        free_memory(&C[i]);
 
     return 0;
 }
