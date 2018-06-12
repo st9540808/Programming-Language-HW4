@@ -58,6 +58,16 @@ void copy_sub(sub_matrix_t *dest, const sub_matrix_t *src)
     memcpy(dest->data, src->data, sizeof *src->data * src->row);
 }
 
+void clear(matrix_t *dest)
+{
+    memset(dest->data, 0, sizeof *dest->data * dest->row);
+}
+
+void clear_sub(sub_matrix_t *dest)
+{
+    memset(dest->data, 0, sizeof *dest->data * dest->row);
+}
+
 void addition(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
 {
     for (int i = 0; i < A->row; i++) {
@@ -75,7 +85,7 @@ void subtract(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
 }
 
 /**
- * matrix multiply for submatrices
+ * sub matrix multiply
  */
 void multiply(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
 {
@@ -90,7 +100,6 @@ void multiply(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
     }
 }
 
-// cache friendly version
 void multiply_opt(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
 {
     int elem;
@@ -104,15 +113,15 @@ void multiply_opt(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
-// naive matrix multiplication
+// naive matrix multiplcation
 ///////////////////////////////////////////////////////////////////////////////////
-
-void* naive_thread(void *arg)
+static void* naive_thread(void *arg)
 {
     Args_t *Args = (Args_t *) arg;
     int block_i = Args->block_i, block_j = Args->block_j;
     matrix_t *C = Args->C;
     sub_matrix_t subMat;
+    DECLARE_MULTIPLY(*Args);
 
     allocate_sub(&subMat);
 
@@ -121,10 +130,10 @@ void* naive_thread(void *arg)
     subMat.col = subA[block_i][block_j].col;
     subMat.start_pos_i = subA[block_i][block_j].start_pos_i;
     subMat.start_pos_j = subA[block_i][block_j].start_pos_j;
-    memset(&subMat.data[0][0], 0, sizeof *subMat.data * (ROWSIZE / 2));
+    clear_sub(&subMat);
 
     for (int i = 0; i < 2; i++) {
-        multiply(&subMat, &subA[block_i][i], &subB[i][block_j]);
+        multiply_opt(&subMat, &subA[block_i][i], &subB[i][block_j]);
     }
     
     // copy result to matrix C
@@ -136,7 +145,7 @@ void* naive_thread(void *arg)
     free_memory_sub(&subMat);
 }
 
-void naive(matrix_t *C, matrix_t *A, matrix_t *B)
+static void naive_generic(matrix_t *C, matrix_t *A, matrix_t *B, void (*mul)())
 {
     // check if A & B are square matrices
     if (A->row != A->col || B->row != B->col || A->row != B->row)
@@ -176,6 +185,7 @@ void naive(matrix_t *C, matrix_t *A, matrix_t *B)
             Args[i][j].C = C;
             Args[i][j].block_i = i;
             Args[i][j].block_j = j;
+            Args[i][j].multiply = mul;
             pthread_create(&thread[i][j], NULL, naive_thread, (void*) &Args[i][j]);
         }
     }
@@ -191,4 +201,14 @@ void naive(matrix_t *C, matrix_t *A, matrix_t *B)
         free_memory_sub(a);
         free_memory_sub(b);
     }
+}
+
+void naive(matrix_t *C, matrix_t *A, matrix_t *B)
+{
+    naive_generic(C, A, B, multiply);
+}
+
+void naive_opt(matrix_t *C, matrix_t *A, matrix_t *B)
+{
+    naive_generic(C, A, B, multiply_opt);
 }

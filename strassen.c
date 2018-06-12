@@ -21,6 +21,7 @@ static void* p1(void *arg)
     Args_t *Args = (Args_t *) arg;
     matrix_t *C = Args->C;
     sub_matrix_t right = { .row = C->row / 2, .col = C->col / 2 };
+    DECLARE_MULTIPLY(*Args);
 
     allocate_sub(&right);
     subtract(&right, &subB[0][1], &subB[1][1]);
@@ -28,7 +29,6 @@ static void* p1(void *arg)
 
     signal_p(1);
     free_memory_sub(&right);
-    pthread_exit(0);
 }
 
 static void* p2(void *arg)
@@ -36,6 +36,7 @@ static void* p2(void *arg)
     Args_t *Args = (Args_t *) arg;
     matrix_t *C = Args->C;
     sub_matrix_t left = { .row = C->row / 2, .col = C->col / 2 };
+    DECLARE_MULTIPLY(*Args);
     
     allocate_sub(&left);
     addition(&left, &subA[0][0], &subA[0][1]);
@@ -43,7 +44,6 @@ static void* p2(void *arg)
 
     signal_p(2);
     free_memory_sub(&left);
-    pthread_exit(0);
 }
 
 static void* p3(void *arg)
@@ -51,6 +51,7 @@ static void* p3(void *arg)
     Args_t *Args = (Args_t *) arg;
     matrix_t *C = Args->C;
     sub_matrix_t left = { .row = C->row / 2, .col = C->col / 2 };
+    DECLARE_MULTIPLY(*Args);
     
     allocate_sub(&left);
     addition(&left, &subA[1][0], &subA[1][1]);
@@ -58,7 +59,6 @@ static void* p3(void *arg)
 
     signal_p(3);
     free_memory_sub(&left);
-    pthread_exit(0);
 }
 
 static void* p4(void *arg)
@@ -66,6 +66,7 @@ static void* p4(void *arg)
     Args_t *Args = (Args_t *) arg;
     matrix_t *C = Args->C;
     sub_matrix_t right = { .row = C->row / 2, .col = C->col / 2 };
+    DECLARE_MULTIPLY(*Args);
     
     allocate_sub(&right);
     subtract(&right, &subB[1][0], &subB[0][0]);
@@ -73,7 +74,6 @@ static void* p4(void *arg)
 
     signal_p(4);
     free_memory_sub(&right);
-    pthread_exit(0);
 }
 
 static void* p5(void *arg)
@@ -82,6 +82,7 @@ static void* p5(void *arg)
     matrix_t *C = Args->C;
     sub_matrix_t right = { .row = C->row / 2, .col = C->col / 2 };
     sub_matrix_t left = right;
+    DECLARE_MULTIPLY(*Args);
     
     allocate_sub(&right);
     allocate_sub(&left);
@@ -92,7 +93,6 @@ static void* p5(void *arg)
     signal_p(5);
     free_memory_sub(&right);
     free_memory_sub(&left);
-    pthread_exit(0);
 }
 
 static void* p6(void *arg)
@@ -101,6 +101,7 @@ static void* p6(void *arg)
     matrix_t *C = Args->C;
     sub_matrix_t right = { .row = C->row / 2, .col = C->col / 2 };
     sub_matrix_t left = right;
+    DECLARE_MULTIPLY(*Args);
     
     allocate_sub(&right);
     allocate_sub(&left);
@@ -111,7 +112,6 @@ static void* p6(void *arg)
     signal_p(6);
     free_memory_sub(&right);
     free_memory_sub(&left);
-    pthread_exit(0);
 }
 
 static void* p7(void *arg)
@@ -120,6 +120,7 @@ static void* p7(void *arg)
     matrix_t *C = Args->C;
     sub_matrix_t right = { .row = C->row / 2, .col = C->col / 2 };
     sub_matrix_t left = right;
+    DECLARE_MULTIPLY(*Args);
     
     allocate_sub(&right);
     allocate_sub(&left);
@@ -130,7 +131,6 @@ static void* p7(void *arg)
     signal_p(7);
     free_memory_sub(&right);
     free_memory_sub(&left);
-    pthread_exit(0);
 }
 
 static void* strassen_thread_C00(void *arg)
@@ -247,14 +247,14 @@ static void* strassen_thread_C11(void *arg)
     free_memory_sub(&subMat);
 }
 
-void strassen(matrix_t *C, matrix_t *A, matrix_t *B)
+static void strassen_generic(matrix_t *C, matrix_t *A, matrix_t *B, void (*mul)())
 {
     // check if A & B are square matrices
     if (A->row != A->col || B->row != B->col || A->row != B->row)
         return;
 
     pthread_t thr[7], strassen_thr[2][2];
-    Args_t p_args = { .C = C }, Args[2][2];
+    Args_t p_args = { .C = C, .multiply = mul }, Args[2][2];
     void* (*p_thread[7])(void *) = { p1, p2, p3, p4, p5, p6, p7 };
     void* (*strassen_thread[2][2])(void *) = {
         { strassen_thread_C00, strassen_thread_C01 },
@@ -270,6 +270,7 @@ void strassen(matrix_t *C, matrix_t *A, matrix_t *B)
         p[i].row = A->row / 2;
         p[i].col = A->col / 2;
         allocate_sub(&p[i]);
+        clear_sub(&p[i]);
     }
 
     // set size for submatrices
@@ -298,6 +299,7 @@ void strassen(matrix_t *C, matrix_t *A, matrix_t *B)
     // calculate p[i]
     for (int i = 0; i < 7; i++) {
         pthread_create(&thr[i], NULL, p_thread[i], (void *) &p_args);    
+        pthread_detach(thr[i]);
     }
 
     for (int i = 0; i < 2; i++) {
@@ -323,4 +325,14 @@ void strassen(matrix_t *C, matrix_t *A, matrix_t *B)
 
     for (int i = 1; i <= 7; i++)
         free_memory_sub(&p[i]);
+}
+
+void strassen_opt(matrix_t *C, matrix_t *A, matrix_t *B)
+{
+    strassen_generic(C, A, B, multiply_opt);
+}
+
+void strassen(matrix_t *C, matrix_t *A, matrix_t *B)
+{
+    strassen_generic(C, A, B, multiply);
 }
