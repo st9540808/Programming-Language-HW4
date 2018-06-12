@@ -30,9 +30,9 @@ int main(void)
         secs--;
         nsecs += 1000000000;
     }
-    printf("naive: %f s", (secs * 1e9 + nsecs) / 1e9);
-    // print(&C);
-    puts("");
+    printf("naive: %f s\n", (secs * 1e9 + nsecs) / 1e9);
+    print(&C);
+    // puts("");
 
     // reset C
     memset(C.data, 0, sizeof *C.data * ROWSIZE);
@@ -47,8 +47,8 @@ int main(void)
         secs--;
         nsecs += 1000000000;
     }
-    printf("strassen: %f s", (secs * 1e9 + nsecs) / 1e9);
-    // print(&C);
+    printf("strassen: %f s\n", (secs * 1e9 + nsecs) / 1e9);
+    print(&C);
 
     free_memory(&A);
     free_memory(&B);

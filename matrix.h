@@ -19,6 +19,8 @@ typedef struct sub_matrix {
 typedef struct Args {
     matrix_t *C;
     int block_i,  block_j;
+    // select which version of multiply to use
+    void (*multiply)(sub_matrix_t *, sub_matrix_t *, sub_matrix_t *);
 } Args_t;
 
 void read(matrix_t *Mat);
@@ -32,7 +34,7 @@ void copy_sub(sub_matrix_t *dest, const sub_matrix_t *src);
 void addition(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
 void subtract(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
 void multiply(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
-void multiply_addto(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
+void multiply_opt(sub_matrix_t *C, sub_matrix_t *A, sub_matrix_t *B);
 void* naive_thread(void *arg);
 void naive(matrix_t *C, matrix_t *A, matrix_t *B);
 
