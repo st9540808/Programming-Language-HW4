@@ -20,7 +20,7 @@ void print(matrix_t *Mat)
     for (int i = 0; i < Mat->row; i++) {
         for (int j = 0; j < Mat->col; j++)
             printf("%3d ", Mat->data[i][j]);
-        puts("");
+        printf("\r\n");
     }
 }
 
@@ -29,7 +29,7 @@ void print_sub(sub_matrix_t *Mat)
     for (int i = 0; i < Mat->row; i++) {
         for (int j = 0; j < Mat->col; j++)
             printf("%3d ", Mat->data[i][j]);
-        puts("");
+        printf("\r\n");
     }
 }
 
