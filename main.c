@@ -55,7 +55,7 @@ int main(void)
     strassen_opt(&C, &A, &B);
     // clock_gettime(CLOCK_MONOTONIC, &end);
     // PRINTTIME("strassen_opt");
-    print(&C); puts("");
+    print(&C); // puts("");
 
     free_memory(&A);
     free_memory(&B);
